@@ -18,17 +18,16 @@ pipeline {
                     echo 'Fetching latest code from GitHub...'
                     bat """
                         IF EXIST "${WORKSPACE_DIR}\\.git" (
-                            cd /d "${WORKSPACE_DIR}"
-                            git fetch --all
-                            git reset --hard origin/${REPO_BRANCH}
-                            git clean -fd
-                            git checkout ${REPO_BRANCH}
-                            git pull origin ${REPO_BRANCH} --force
+                            cd /d "${WORKSPACE_DIR}" && call git fetch --all
+                            call git reset --hard origin/%REPO_BRANCH%
+                            call git clean -fd
+                            call git checkout %REPO_BRANCH%
+                            call git pull origin %REPO_BRANCH% --force
                         ) ELSE (
-                            rmdir /s /q "${WORKSPACE_DIR}"
-                            git clone -b ${REPO_BRANCH} "${REPO_URL}" "${WORKSPACE_DIR}"
+                            rmdir /s /q "${WORKSPACE_DIR}" 2>nul
+                            call git clone -b %REPO_BRANCH% "%REPO_URL%" "%WORKSPACE_DIR%"
                         )
-                        git log -1
+                        call git log -1
                     """
                 }
             }
@@ -40,7 +39,7 @@ pipeline {
                     echo 'Installing project dependencies...'
                     bat """
                         cd /d "${WORKSPACE_DIR}"
-                        npm install --legacy-peer-deps
+                        call npm install --legacy-peer-deps
                     """
                 }
             }
@@ -52,8 +51,8 @@ pipeline {
                     echo 'Building React application...'
                     bat """
                         cd /d "${WORKSPACE_DIR}"
-                        rd /s /q build
-                        npm run build
+                        IF EXIST build rd /s /q build
+                        call npm run build
                     """
                 }
             }
@@ -67,8 +66,10 @@ pipeline {
                         bat """
                             icacls "%SSH_KEY%" /inheritance:r
                             icacls "%SSH_KEY%" /grant:r "User:F"
+
                             ssh -i "%SSH_KEY%" %EC2_USER%@%EC2_HOST% "sudo mkdir -p ${REMOTE_DEPLOY_DIR} && sudo rm -rf ${REMOTE_DEPLOY_DIR}/*"
                             scp -i "%SSH_KEY%" -r "${WORKSPACE_DIR}\\build\\*" %EC2_USER%@%EC2_HOST%:${REMOTE_DEPLOY_DIR}/
+
                             ssh -i "%SSH_KEY%" %EC2_USER%@%EC2_HOST% "ls -lah ${REMOTE_DEPLOY_DIR}/"
                             ssh -i "%SSH_KEY%" %EC2_USER%@%EC2_HOST% "sudo systemctl restart nginx || sudo systemctl restart apache2 || pm2 restart all"
                         """
