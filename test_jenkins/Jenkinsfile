@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         REPO_URL = "https://github.com/adityathakureka/web_test_2"
-        REPO_BRANCH = "jenkins_test"
+        REPO_BRANCH = "test_jenkins"
         WORKSPACE_DIR = "C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\web_test_deploy"
         EC2_USER = "ec2-user"
         EC2_HOST = "13.233.151.39"
